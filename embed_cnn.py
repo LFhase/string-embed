@@ -10,9 +10,12 @@ from trainer import train_epoch
 from datasets import TripletString, StringDataset
 from transformers import BertTokenizer, BertModel
 
-def _init_bert(bert_choice = "bert-base-uncased", cache_dir = "bert-cache"):
+def _init_bert(bert_choice = "bert-base-uncased", cache_dir = "bert-cache", device=None):
     tokenizer = BertTokenizer.from_pretrained(bert_choice, cache_dir=cache_dir)
     bert = BertModel.from_pretrained(bert_choice, cache_dir=cache_dir)
+    if device != None:
+        tokenizer = tokenizer.to(device)
+        bert = bert.to(device)
     return tokenizer, bert
 
 
@@ -23,7 +26,7 @@ def _batch_embed(args, net, vecs: StringDataset, device, char_alphabet=None):
     # convert it into a raw string dataset
     if char_alphabet != None:
         vecs.to_bert_dataset(char_alphabet)
-        tokenizer, bert = _init_bert()
+        tokenizer, bert = _init_bert(device = device)
 
     test_loader = torch.utils.data.DataLoader(vecs, batch_size=args.test_batch_size, shuffle=False, num_workers=4)
     net.eval()
