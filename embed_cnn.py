@@ -10,11 +10,10 @@ from trainer import train_epoch
 from datasets import TripletString, StringDataset
 from transformers import BertTokenizer, BertModel
 
-# bert embedding
-bert_choice = "bert-base-uncased"
-cache_dir = "bert-cache"
-tokenizer = BertTokenizer.from_pretrained(bert_choice, cache_dir=cache_dir)
-bert = BertModel.from_pretrained(bert_choice, cache_dir=cache_dir)
+def _init_bert(bert_choice = "bert-base-uncased", cache_dir = "bert-cache"):
+    tokenizer = BertTokenizer.from_pretrained(bert_choice, cache_dir=cache_dir)
+    bert = BertModel.from_pretrained(bert_choice, cache_dir=cache_dir)
+    return tokenizer, bert
 
 
 def _batch_embed(args, net, vecs: StringDataset, device, char_alphabet=None):
@@ -24,6 +23,7 @@ def _batch_embed(args, net, vecs: StringDataset, device, char_alphabet=None):
     # convert it into a raw string dataset
     if char_alphabet != None:
         vecs.to_bert_dataset(char_alphabet)
+        tokenizer, bert = _init_bert()
 
     test_loader = torch.utils.data.DataLoader(vecs, batch_size=args.test_batch_size, shuffle=False, num_workers=4)
     net.eval()
@@ -38,7 +38,6 @@ def _batch_embed(args, net, vecs: StringDataset, device, char_alphabet=None):
                     xx = bert(**xx)[0][0][1].unsqueeze(0)
                     embedding.append(xx.cpu().data.numpy())
             else:
-
                 embedding.append(net(x.to(device)).cpu().data.numpy())
     vecs.to_original_dataset()
     return np.concatenate(embedding, axis=0)
