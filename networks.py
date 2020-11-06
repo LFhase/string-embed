@@ -62,6 +62,8 @@ class MultiLayerCNN(nn.Module):
 
         # Size after pooling
         self.flat_size = M // 1024 * C // self.mtc_input * channel
+        print(M)
+        print(C)
         print("# self.flat_size ", self.flat_size)
         self.fc2 = nn.Linear(self.flat_size, self.flat_size)
         self.fc1 = nn.Linear(self.flat_size, embedding)

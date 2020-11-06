@@ -14,7 +14,6 @@ def _init_bert(bert_choice = "bert-base-uncased", cache_dir = "bert-cache", devi
     tokenizer = BertTokenizer.from_pretrained(bert_choice, cache_dir=cache_dir)
     bert = BertModel.from_pretrained(bert_choice, cache_dir=cache_dir)
     if device != None:
-        tokenizer = tokenizer.to(device)
         bert = bert.to(device)
     return tokenizer, bert
 
@@ -36,7 +35,7 @@ def _batch_embed(args, net, vecs: StringDataset, device, char_alphabet=None):
             p_bar.update(1)
             if char_alphabet != None:
                 for xx in x:
-                    xx = tokenizer(xx, return_tensors="pt")
+                    xx = tokenizer(xx, return_tensors="pt").to(device)
                     # 1 x 768
                     xx = bert(**xx)[0][0][1].unsqueeze(0)
                     embedding.append(xx.cpu().data.numpy())

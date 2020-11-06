@@ -25,12 +25,14 @@ def train_epoch(args, train_set, device):
         EmbeddingNet = DBLPCNN
     elif args.dataset == "uniref":
         EmbeddingNet = UnirefCNN
+    elif "dict" in args.dataset or "conll" in args.dataset:
+        EmbeddingNet = TwoLayerCNN
     else:
         EmbeddingNet = MultiLayerCNN
 
     if args.epochs == 0 and args.dataset != "word":
         EmbeddingNet = RandomCNN
-    
+
     net = EmbeddingNet(C, M, embedding=args.embed_dim, channel=args.channel, mtc_input=args.mtc).to(device)
     model = TripletNet(net).to(device)
     losser = TripletLoss(args)

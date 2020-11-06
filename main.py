@@ -236,9 +236,10 @@ def get_args():
         "--no-cuda", action="store_true", default=False, help="disables GPU training"
     )
     args = parser.parse_args()
-    data_file = "model/{}/{}/{}/nt{}_nq{}{}".format(
+    data_file = "model/{}/{}-{}/{}/nt{}_nq{}{}".format(
         args.shuffle_seed,
         args.embed if args.embed != "cgk" else "cnn",
+        args.embed_dim,
         args.dataset,
         args.nt,
         args.nq,
