@@ -8,9 +8,41 @@ import numpy as np
 from utils import test_recall
 from trainer import train_epoch
 from datasets import TripletString, StringDataset
+from networks import *
 from transformers import BertTokenizer, BertModel
 
-def _init_bert(bert_choice = "bert-base-uncased", cache_dir = "bert-cache", device=None):
+
+def _init_net(args, train_set, device):
+    N = len(train_set)
+    C, M = train_set.C, train_set.M
+    if args.dataset == "word":
+        EmbeddingNet = TwoLayerCNN
+    elif args.dataset == "querylog":
+        EmbeddingNet = QuerylogCNN
+    elif args.dataset == "enron":
+        EmbeddingNet = EnronCNN
+    elif args.dataset == "trec":
+        EmbeddingNet = TrecCNN
+    elif args.dataset == "dblp":
+        EmbeddingNet = DBLPCNN
+    elif args.dataset == "uniref":
+        EmbeddingNet = UnirefCNN
+    elif "dict" in args.dataset or "conll" in args.dataset:
+        EmbeddingNet = TwoLayerCNN
+    else:
+        EmbeddingNet = MultiLayerCNN
+
+    if args.epochs == 0 and args.dataset != "word":
+        EmbeddingNet = RandomCNN
+
+    net = EmbeddingNet(C, M, embedding=args.embed_dim,
+                       channel=args.channel, mtc_input=args.mtc).to(device)
+    model = TripletNet(net).to(device)
+
+    return model
+
+
+def _init_bert(bert_choice="bert-base-uncased", cache_dir="bert-cache", device=None):
     tokenizer = BertTokenizer.from_pretrained(bert_choice, cache_dir=cache_dir)
     bert = BertModel.from_pretrained(bert_choice, cache_dir=cache_dir)
     if device != None:
@@ -25,9 +57,10 @@ def _batch_embed(args, net, vecs: StringDataset, device, char_alphabet=None):
     # convert it into a raw string dataset
     if char_alphabet != None:
         vecs.to_bert_dataset(char_alphabet)
-        tokenizer, bert = _init_bert(device = device)
+        tokenizer, bert = _init_bert(device=device)
 
-    test_loader = torch.utils.data.DataLoader(vecs, batch_size=args.test_batch_size, shuffle=False, num_workers=4)
+    test_loader = torch.utils.data.DataLoader(
+        vecs, batch_size=args.test_batch_size, shuffle=False, num_workers=4)
     net.eval()
     embedding = []
     with tqdm.tqdm(total=len(test_loader), desc="# batch embedding") as p_bar:
@@ -53,16 +86,21 @@ def cnn_embedding(args, h, data_file):
         device = torch.device("cuda")
     else:
         device = torch.device("cpu")
-    train_loader = TripletString(h.xt, h.nt, h.train_knn, h.train_dist, K=args.k)
+    train_loader = TripletString(
+        h.xt, h.nt, h.train_knn, h.train_dist, K=args.k)
 
+    # for model save and load, let's use state dict instead
     model_file = "{}/model.torch".format(data_file)
     if os.path.isfile(model_file):
-        model = torch.load(model_file)
+        #model = torch.load(model_file)
+        model = _init_net(args, train_loader, device)
+        model.load_state_dict(torch.load(model_file))
     else:
         start_time = time.time()
         model = train_epoch(args, train_loader, device)
         if args.save_model:
-            torch.save(model, model_file)
+            #torch.save(model, model_file)
+            torch.save(model.state_dict(), model_file)
         train_time = time.time() - start_time
         print("# Training time: " + str(train_time))
     model.eval()
@@ -72,12 +110,15 @@ def cnn_embedding(args, h, data_file):
     if args.bert:
         char_alphabet = h.alphabet
 
-    xt = _batch_embed(args, model.embedding_net, h.xt, device, char_alphabet=char_alphabet)
+    xt = _batch_embed(args, model.embedding_net, h.xt,
+                      device, char_alphabet=char_alphabet)
     start_time = time.time()
     xt = []
-    xb = _batch_embed(args, model.embedding_net, h.xb, device, char_alphabet=char_alphabet)
+    xb = _batch_embed(args, model.embedding_net, h.xb,
+                      device, char_alphabet=char_alphabet)
     embed_time = time.time() - start_time
-    xq = _batch_embed(args, model.embedding_net, h.xq, device, char_alphabet=char_alphabet)
+    xq = _batch_embed(args, model.embedding_net, h.xq,
+                      device, char_alphabet=char_alphabet)
     print("# Embedding time: " + str(embed_time))
     if args.save_embed:
         if args.embed_dir != "":
