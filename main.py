@@ -39,15 +39,19 @@ class DataHandler:
         self.dataset = args.dataset
 
         self.lines = readlines("data/{}".format(args.dataset))
+
         if self.maxl != 0:
             self.lines = [l[: self.maxl] for l in self.lines]
         self.ni = len(self.lines)
+        self.lines = [chr(i+ord('a')) for i in range(26) ]+[chr(i+ord('A')) for i in range(26)] + self.lines
+        print("Add basic characters (a-z) and (A-Z) into the data")
+
         self.nb = self.ni - self.nq - self.nt
 
         start_time = time.time()
         self.C, self.M, self.char_ids, self.alphabet = word2sig(self.lines, max_length=None)
         print("# Loading time: {}".format(time.time() - start_time))
-
+        print("# Alphabet: ",''.join(sorted(list(self.alphabet))))
         self.load_ids()
         self.load_dist()
 
