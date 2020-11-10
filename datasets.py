@@ -63,7 +63,7 @@ def word2sig(lines, max_length=None, pre_alphabet=None):
     if pre_alphabet != None:
         all_chars = pre_alphabet
         alphabet = ''.join(pre_alphabet.keys())
-        x = [[all_chars[c] if c in pre_alphabet.keys() else '<C_UNK>' for c in line] for line in lines]
+        x = [[all_chars[c] if c in pre_alphabet.keys() else all_chars['<C_UNK>'] for c in line] for line in lines]
         return len(all_chars.keys()), max_length, x, alphabet
 
     all_chars = dict()
