@@ -80,10 +80,18 @@ class DataHandler:
         random_text = root_dir + "random.txt"
         if not os.path.isfile(random_text):
             print("# generate random training samples " + random_text)
-            self.train_rnd = [self.random_str(self.M) for _ in range(self.args.nr)]
+            tmp_alphabet = self.alphabet
+            self.alphabet = self.alphabet[:26*2] # let it be only a-z and A-Z
+            first_nr = round(self.args.nr*9/10)
+            print("# Using "+self.alphabet+" to generate "+str(first_nr)+" strings")
+            first_train_rnd = [self.random_str(self.M) for _ in range(first_nr)]
+            self.alphabet = tmp_alphabet
+            print("# Using "+self.alphabet+" to generate "+str(self.args.nr-first_nr)+" strings")
+            self.train_rnd = first_train_rnd + [self.random_str(self.M) for _ in range(self.args.nr-first_nr)]
             if not replace:
                 print("# appended to training samples " + random_text)
                 self.train_rnd =  [self.lines[i] for i in self.train_ids] + self.train_rnd
+            print("# final training samples: ",len(self.train_rnd))
             with open(random_text, "w") as w:
                 w.writelines("%s\n" % line for line in self.train_rnd)
             self.train_dist, self.train_knn = get_dist_knn(self.train_rnd)
