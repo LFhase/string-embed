@@ -46,7 +46,7 @@ def readlines(file):
     return [line.decode("utf8", "ignore") for line in lines]
 
 
-def word2sig(lines, max_length=None):
+def word2sig(lines, max_length=None, pre_alphabet=None):
     """
     :param file: the path to the file
     :return: 2-dimensional numpy array, of which each row denotes one string's one-hot coding
@@ -59,6 +59,12 @@ def word2sig(lines, max_length=None):
             max_length += 1
     elif max_length < np.max(lens):
         warnings.warn("K is {} while strings may " "exceed the maximum length {}".format(max_length, np.max(lens)))
+
+    if pre_alphabet != None:
+        all_chars = pre_alphabet
+        alphabet = ''.join(pre_alphabet.keys())
+        x = [[all_chars[c] if c in pre_alphabet.keys() else '<C_UNK>' for c in line] for line in lines]
+        return len(all_chars.keys()), max_length, x, alphabet
 
     all_chars = dict()
     all_chars["counter"] = 0

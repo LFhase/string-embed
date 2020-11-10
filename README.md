@@ -12,7 +12,7 @@ string similarity search.
 
 - train CNN-ED model
 ```    
-python main.py --dataset word --nt 1000 --nq 1000 --epochs 20 --save-split --recall
+python main.py --dataset word --nt 1000 --nq 1000 --epochs 20 --save-split --recall --pre_mappings data\BertTagger20200825201318.mappings
 ```
 
 - test bert embedding

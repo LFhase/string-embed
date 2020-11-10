@@ -12,6 +12,7 @@ from utils import l2_dist
 from embed_cnn import cnn_embedding
 from embed_cgk import cgk_embedding
 from datasets import readlines, word2sig, StringDataset, all_pair_distance
+import pickle
 
 
 def get_knn(dist):
@@ -47,9 +48,16 @@ class DataHandler:
         print("Add basic characters (a-z) and (A-Z) into the data")
 
         self.nb = self.ni - self.nq - self.nt
+        self.pre_mappings = None
+        if args.pre_mappings != None:
+            with open(args.pre_mappings, 'rb') as f:
+                mappings = pickle.load(f)
+            self.pre_mappings = mappings["char_to_id"]
+            print("# Load pre calculated mappings from "+ args.pre_mappings)
+            print("# Loaded chars "+ str(''.join(mappings["char_to_id"].keys())))
 
         start_time = time.time()
-        self.C, self.M, self.char_ids, self.alphabet = word2sig(self.lines, max_length=None)
+        self.C, self.M, self.char_ids, self.alphabet = word2sig(self.lines, max_length=None, pre_alphabet=self.pre_mappings)
         print("# Loading time: {}".format(time.time() - start_time))
         print("# Alphabet: ",''.join(sorted(list(self.alphabet))))
         self.load_ids()
@@ -205,6 +213,7 @@ def get_args():
     parser.add_argument("--nb", type=int, default=1385451, help="# of base items")
     parser.add_argument("--k", type=int, default=100, help="# sampling threshold")
     parser.add_argument("--epochs", type=int, default=4, help="# of epochs")
+    parser.add_argument("--pre_mappings", type=str, default=None, help="location of pre calculated char mappings")
     parser.add_argument(
         "--shuffle-seed", type=int, default=808, help="seed for shuffle"
     )
